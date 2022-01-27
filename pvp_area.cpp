@@ -177,7 +177,7 @@ class pvp_island : public PlayerScript
             if (!healed || !healer)
                 return;
 
-            // If it's for example a (bugged) area-heal that also heals enemies we should not count this for the quest
+            // If it's for example a (bugged) area-heal that also heals enemies we should not count this for the quest (xfac?)
             if (!healed->IsFriendlyTo(healer))
                 return;
 
@@ -363,14 +363,14 @@ class npc_teleport_pvp_island : public CreatureScript
         }
 };
 
-class npc_teleport_mall : public CreatureScript
+class npc_teleport_home : public CreatureScript
 {
     public:
-        npc_teleport_mall() : CreatureScript("npc_teleport_mall") { }
+        npc_teleport_Home() : CreatureScript("npc_teleport_Home") { }
 
-        struct npc_teleport_mallAI : public ScriptedAI
+        struct npc_teleport_homeAI : public ScriptedAI
         {
-            npc_teleport_mallAI(Creature* creature) : ScriptedAI(creature) { }
+            npc_teleport_homeAI(Creature* creature) : ScriptedAI(creature) { }
 
             void UpdateAI(const uint32 diff)
             {
@@ -386,6 +386,7 @@ class npc_teleport_mall : public CreatureScript
                         return;
                     }
 					player->GetSession()->SendNotification("You left the warzone");
+                    //probably want to change this to dalaran or something
                     player->TeleportTo(571, 4629.569f, -5635.509f, 110.448f, 4.134f);
                 }
             }
@@ -393,7 +394,7 @@ class npc_teleport_mall : public CreatureScript
 
         CreatureAI* GetAI(Creature* creature) const
         {
-            return new npc_teleport_mallAI(creature);
+            return new npc_teleport_homeAI(creature);
         }
 };
 
@@ -436,6 +437,6 @@ void AddSC_vitality_pvp_island()
     new go_powerup_berserking();
     new go_powerup_food();
     new npc_teleport_pvp_island();
-    new npc_teleport_mall();
+    new npc_teleport_home();
     //new spell_spiritual_immunity();
 }

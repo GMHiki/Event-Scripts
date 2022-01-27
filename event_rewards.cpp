@@ -5,9 +5,9 @@
 / __  /| |   <| |   / __ \ (_) | | | | | | (_) | |  | |
 \/ /_/ |_|_|\_\_|   \/  \/\___/|_| |_| |_|\___/|_|  |_|
 
-	 Even a fool, 
-	 	when he holdeth his peace,
-		  			is counted wise.
+     Even a fool, 
+        when he holdeth his peace,
+                    is counted wise.
 
 	Game Freedom 2021-2022
 <--------------------------------------------------------------------------->
@@ -31,7 +31,7 @@ class reward_npc : public CreatureScript
 
         enum GOSSIPMENU
         {
-            REQ_REBIRTHPOINTS = 1,
+            REQ_EVENTPOINTS = 1,
             EVENT_CATEGORIES  = 4,
             REQ_NEXT_EVENTS   = 2,
             EVENT_TELEPORT    = 3,
@@ -51,7 +51,7 @@ class reward_npc : public CreatureScript
 
         void RewardScript(Player* player, int scriptid)
         {
-            QueryResult result = WorldDatabase.PQuery("SELECT type, param1, param2, param3 FROM rebirth_reward_scripts WHERE id = %d",scriptid);
+            QueryResult result = WorldDatabase.PQuery("SELECT type, param1, param2, param3 FROM event_reward_scripts WHERE id = %d",scriptid);
             if (result)
             {
                 Field* field = result->Fetch();
@@ -198,17 +198,17 @@ class reward_npc : public CreatureScript
             return true;
         }
 
-        void RequestRebirthPoints(Player* player, Creature* creature)
+        void RequestEventPoints(Player* player, Creature* creature)
         {
 
-            QueryResult result = LoginDatabase.PQuery("SELECT rebirth_points FROM account WHERE id = %u", player->GetSession()->GetAccountId());
+            QueryResult result = LoginDatabase.PQuery("SELECT event_points FROM account WHERE id = %u", player->GetSession()->GetAccountId());
 
             if (result)
             {
                 Field* field = result->Fetch();
                 uint32 eventpoints = field[0].GetUInt32();
                 char str_info[200];
-                sprintf(str_info,"You have %u Rebirth points!", eventpoints);
+                sprintf(str_info,"You have %u Event points!", eventpoints);
                 player->PlayerTalkClass->ClearMenus();
                 player->MonsterWhisper(str_info,player->GetGUID(),true);
                 OnGossipHello(player, creature);
@@ -222,7 +222,7 @@ class reward_npc : public CreatureScript
         void RequestNextEvents(Player* player, Creature* creature)
         {
 
-            QueryResult result = LoginDatabase.PQuery("SELECT FROM_UNIXTIME(date), type, reqLevel FROM rebirth_next_event WHERE date > UNIX_TIMESTAMP()");
+            QueryResult result = LoginDatabase.PQuery("SELECT FROM_UNIXTIME(date), type, reqLevel FROM event_next_event WHERE date > UNIX_TIMESTAMP()");
 
             if (result)
             {
@@ -259,7 +259,7 @@ class reward_npc : public CreatureScript
         void TeleportToEvent(Player* player, Creature* creature)
         {
 
-            QueryResult result = LoginDatabase.PQuery("SELECT x, y, z, map, reqLevel FROM rebirth_next_event WHERE active = 1");
+            QueryResult result = LoginDatabase.PQuery("SELECT x, y, z, map, reqLevel FROM event_next_event WHERE active = 1");
 
             if (result && isActive())
             {
@@ -282,7 +282,7 @@ class reward_npc : public CreatureScript
 
         bool isActive()
         {
-            QueryResult result = LoginDatabase.PQuery("SELECT * FROM rebirth_next_event WHERE active = 1");
+            QueryResult result = LoginDatabase.PQuery("SELECT * FROM event_next_event WHERE active = 1");
             if (result)
                 return true;
             else
@@ -291,17 +291,17 @@ class reward_npc : public CreatureScript
 
         bool OnGossipHello(Player* pPlayer, Creature* pCreature)
         {
-            if (sWorld->getBoolConfig(CONFIG_REBIRTH_EVENTSYSTEM_ENABLED))
+            if (sWorld->getBoolConfig(CONFIG_EVENT_EVENTSYSTEM_ENABLED))
             {
-                pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "How many Rebirth Points do I have?", GOSSIP_SENDER_MAIN, 1);
+                pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "How many Event Points do I have?", GOSSIP_SENDER_MAIN, 1);
 
-                if (sWorld->getBoolConfig(CONFIG_REBIRTH_EVENTSYSTEM_NEXT_EVENT_INFO_ENABLED))
+                if (sWorld->getBoolConfig(CONFIG_EVENT_EVENTSYSTEM_NEXT_EVENT_INFO_ENABLED))
                     pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "When will the next events take place?", GOSSIP_SENDER_MAIN, 2);
 
-                if (sWorld->getBoolConfig(CONFIG_REBIRTH_EVENTSYSTEM_TELEPORT_ENABLED))
+                if (sWorld->getBoolConfig(CONFIG_EVENT_EVENTSYSTEM_TELEPORT_ENABLED))
                     pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Teleport me to the event!", GOSSIP_SENDER_MAIN, 3);
 
-                if (sWorld->getBoolConfig(CONFIG_REBIRTH_EVENTSYSTEM_REWARDS_ENABLED))
+                if (sWorld->getBoolConfig(CONFIG_EVENT_EVENTSYSTEM_REWARDS_ENABLED))
                     pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I want to buy rewards!", GOSSIP_SENDER_MAIN, 4);
 
                 pPlayer->PlayerTalkClass->SendGossipMenu(120100, pCreature->GetGUID());
@@ -319,8 +319,8 @@ class reward_npc : public CreatureScript
 
             switch (uiAction)
             {
-                case REQ_REBIRTHPOINTS:
-                    RequestRebirthPoints(pPlayer, pCreature);
+                case REQ_EVENTPOINTS:
+                    RequestEventPoints(pPlayer, pCreature);
                     break;
 
                 case REQ_NEXT_EVENTS:
@@ -336,7 +336,7 @@ class reward_npc : public CreatureScript
                     break;
 
                 case EVENT_CATEGORIES: //EventReward Menu
-                    resultEvent = WorldDatabase.PQuery("SELECT id, name FROM rebirth_reward_categorie");
+                    resultEvent = WorldDatabase.PQuery("SELECT id, name FROM event_reward_category");
 
                     if (resultEvent)
                     {
@@ -358,12 +358,12 @@ class reward_npc : public CreatureScript
 
 
                 /*
-                    Hier wird die Liste der Rewards erstellt
-                    ToDo: Eine schönere Umsetzung finden
+                    This is where the list of rewards is created
+                    To Do: Find a nicer implementation
                 */
                 if (uiAction >= 100 && uiAction < 1000)
                 {
-                    QueryResult result = WorldDatabase.PQuery("SELECT id, name, type, param1, param2, param3, cost FROM rebirth_rewards WHERE catid = %u", uiAction-100);
+                    QueryResult result = WorldDatabase.PQuery("SELECT id, name, type, param1, param2, param3, cost FROM event_rewards WHERE catid = %u", uiAction-100);
 
                     if (result)
                     {
@@ -388,12 +388,12 @@ class reward_npc : public CreatureScript
 
                 /*
                     From here the rewards are given
-                     To Do: Find a nicer implementation for this...
+                    To Do: Find a nicer implementation for this...
                 */
                 if (uiAction >= 1000 && uiAction < 10000)
                 {
-                    QueryResult result = WorldDatabase.PQuery("SELECT type, param1, param2, param3, cost, condition_type, cond_value1, cond_value2, cond_value3, negation, script_id FROM rebirth_rewards WHERE id = %u AND catid != ''", uiAction-1000);
-                    QueryResult resulta = LoginDatabase.PQuery("SELECT rebirth_points FROM account WHERE id = %u", pPlayer->GetSession()->GetAccountId());
+                    QueryResult result = WorldDatabase.PQuery("SELECT type, param1, param2, param3, cost, condition_type, cond_value1, cond_value2, cond_value3, negation, script_id FROM event_rewards WHERE id = %u AND catid != ''", uiAction-1000);
+                    QueryResult resulta = LoginDatabase.PQuery("SELECT event_points FROM account WHERE id = %u", pPlayer->GetSession()->GetAccountId());
 
                     int pRP = 0;
                     if (resulta)
@@ -443,7 +443,7 @@ class reward_npc : public CreatureScript
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->AddItem(param1, param2);
                                            SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
                                        }
                                        else
                                            SendMessageToPlayer(pPlayer, pCreature, "You do not meet the requirements to purchase this reward!");
@@ -464,8 +464,8 @@ class reward_npc : public CreatureScript
                                        {
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->ModifyHonorPoints(param1);
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
-                                           SendMessageToPlayer(pPlayer, pCreature, "Du hast eine Belohnung erhalten!");
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
                                        }
                                        else
                                            SendMessageToPlayer(pPlayer, pCreature, "You do not meet the requirements to purchase this reward!");
@@ -488,7 +488,7 @@ class reward_npc : public CreatureScript
                                        {
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->SetTitle(title);
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
                                            SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
                                        }
                                        else
@@ -509,7 +509,7 @@ class reward_npc : public CreatureScript
                                        {
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->GiveXP(param1,pPlayer,1.0f);
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
                                            SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
                                        }
 
@@ -530,7 +530,7 @@ class reward_npc : public CreatureScript
                                        {
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->learnSpell(param1,false);
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
                                            SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
                                        }
 
@@ -553,7 +553,7 @@ class reward_npc : public CreatureScript
                                            sLog->outError("true>>");
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->AddAura(param1,pPlayer);
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
                                            SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
                                        }
 
@@ -574,7 +574,7 @@ class reward_npc : public CreatureScript
                                        {
                                            RewardScript(pPlayer, scriptID);
                                            pPlayer->ModifyArenaPoints(param1);
-                                           LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
+                                           LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", cost, pPlayer->GetSession()->GetAccountId());
                                            SendMessageToPlayer(pPlayer, pCreature, "You got a reward!");
                                        }
                                        else

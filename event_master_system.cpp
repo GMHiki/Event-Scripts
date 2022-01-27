@@ -40,10 +40,10 @@ class FlagEvent : public BasicEvent
 };
 
 
-class rebirth_commandscript : public CommandScript
+class event_commandscript : public CommandScript
 {
     public:
-        rebirth_commandscript() : CommandScript("rebirth_commandscript") { }
+        event_commandscript() : CommandScript("event_commandscript") { }
 
 
         static void GiveFFA(Player* player)
@@ -412,11 +412,11 @@ class rebirth_commandscript : public CommandScript
             if(points <  0 || points > 10000)
                return false;
 
-            LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points + %d WHERE id = %u", points, handler->getSelectedPlayer()->GetSession()->GetAccountId());
+            LoginDatabase.PExecute("UPDATE account SET event_points = event_points + %d WHERE id = %u", points, handler->getSelectedPlayer()->GetSession()->GetAccountId());
             (ChatHandler(handler->GetSession()->GetPlayer())).PSendSysMessage("%d Event Point(s) have been added",points);
             (ChatHandler(handler->getSelectedPlayer())).PSendSysMessage("You received %d event point(s)!", points);
             
-            LoginDatabase.PExecute("INSERT INTO rebirth_command_log (command, fromAccount, toAccount, param1, date) VALUES ('rebirth event addpoints',%d,%d,%d,UNIX_TIMESTAMP())",handler->getSelectedPlayer()->GetSession()->GetAccountId(), handler->GetSession()->GetAccountId(), points);
+            LoginDatabase.PExecute("INSERT INTO event_command_log (command, fromAccount, toAccount, param1, date) VALUES ('event event addpoints',%d,%d,%d,UNIX_TIMESTAMP())",handler->getSelectedPlayer()->GetSession()->GetAccountId(), handler->GetSession()->GetAccountId(), points);
             return true;
         }
 
@@ -436,13 +436,13 @@ class rebirth_commandscript : public CommandScript
             else
                 return false;
 
-            WorldDatabase.PExecute("INSERT INTO rebirth_event_rewards (type, name, param1) VALUES (0, %s, %d)", name.c_str(), itemID);
+            WorldDatabase.PExecute("INSERT INTO event_rewards (type, name, param1) VALUES (0, %s, %d)", name.c_str(), itemID);
 
-            result = WorldDatabase.PQuery("SELECT id FROM rebirth_event_rewards WHERE type = 0 AND catid = null AND param1 = %d", itemID);
+            result = WorldDatabase.PQuery("SELECT id FROM event_rewards WHERE type = 0 AND catid = null AND param1 = %d", itemID);
             if (result)
             {
                 handler->PSendSysMessage(
-                    "Created a new Event Reward with ID %d and name %s. Use .rebirth event set #OPTION to set more options like price, quantity, category etc!", 
+                    "Created a new Event Reward with ID %d and name %s. Use .event event set #OPTION to set more options like price, quantity, category etc!", 
                     itemID, name.c_str());
             }
 
@@ -459,7 +459,7 @@ class rebirth_commandscript : public CommandScript
             if(points <  0 || points > 10000)
                return false;
 
-            QueryResult result = LoginDatabase.PQuery("SELECT rebirth_points FROM account WHERE id = %u", handler->getSelectedPlayer()->GetSession()->GetAccountId());
+            QueryResult result = LoginDatabase.PQuery("SELECT event_points FROM account WHERE id = %u", handler->getSelectedPlayer()->GetSession()->GetAccountId());
             if (!result)
                return false;
 
@@ -469,10 +469,10 @@ class rebirth_commandscript : public CommandScript
             if (eventPoints - points < 0)
                 points = eventPoints;
 
-            LoginDatabase.PExecute("UPDATE account SET rebirth_points = rebirth_points - %d WHERE id = %u", points, handler->getSelectedPlayer()->GetSession()->GetAccountId());
+            LoginDatabase.PExecute("UPDATE account SET event_points = event_points - %d WHERE id = %u", points, handler->getSelectedPlayer()->GetSession()->GetAccountId());
             (ChatHandler(handler->GetSession()->GetPlayer())).PSendSysMessage("Player %s were deducted %d event point(s).",handler->getSelectedPlayer()->GetName(), points);
             (ChatHandler(handler->getSelectedPlayer())).PSendSysMessage("You were deducted %d event point(s).", points);
-            LoginDatabase.PExecute("INSERT INTO rebirth_command_log (command, fromAccount, toAccount, param1, date) VALUES ('rebirth event removepoints',%d,%d,%d,UNIX_TIMESTAMP())",handler->getSelectedPlayer()->GetSession()->GetAccountId(), handler->GetSession()->GetAccountId(), points);
+            LoginDatabase.PExecute("INSERT INTO event_command_log (command, fromAccount, toAccount, param1, date) VALUES ('event event removepoints',%d,%d,%d,UNIX_TIMESTAMP())",handler->getSelectedPlayer()->GetSession()->GetAccountId(), handler->GetSession()->GetAccountId(), points);
             return true;
         }
 
@@ -487,7 +487,7 @@ class rebirth_commandscript : public CommandScript
             int id = atoi(arg1);
             int cost = atoi(arg2);
 
-            QueryResult result = WorldDatabase.PQuery("SELECT cost FROM rebirth_event_rewards WHERE id = %d", id);
+            QueryResult result = WorldDatabase.PQuery("SELECT cost FROM event_rewards WHERE id = %d", id);
             if (!result)
             {
                 handler->PSendSysMessage("Event Reward with ID %d not found!", id);
@@ -497,7 +497,7 @@ class rebirth_commandscript : public CommandScript
             Field* field = result->Fetch();
             int oldCost = field[0].GetInt32();
 
-            WorldDatabase.PExecute("UPDATE rebirth_event_rewards SET cost = %d WHERE id = %d",cost,id);
+            WorldDatabase.PExecute("UPDATE event_rewards SET cost = %d WHERE id = %d",cost,id);
             handler->PSendSysMessage("Price of ID %d was set to %d event points by %d.",id, oldCost,cost);
             return true;
         }
@@ -513,7 +513,7 @@ class rebirth_commandscript : public CommandScript
             int id = atoi(arg1);
             int count = atoi(arg2);
 
-            QueryResult result = WorldDatabase.PQuery("SELECT param2 FROM rebirth_event_rewards WHERE id = %d AND type = 0 OR id = %d AND type = 1", id, id);
+            QueryResult result = WorldDatabase.PQuery("SELECT param2 FROM event_rewards WHERE id = %d AND type = 0 OR id = %d AND type = 1", id, id);
             if (!result)
             {
                 handler->PSendSysMessage("Event reward with ID %d not found or is not an item or honor points!", id);
@@ -523,7 +523,7 @@ class rebirth_commandscript : public CommandScript
             Field* field = result->Fetch();
             int oldCount = field[0].GetInt32();
 
-            WorldDatabase.PExecute("UPDATE rebirth_event_rewards SET param2 = %d WHERE id = %d",count,id);
+            WorldDatabase.PExecute("UPDATE event_rewards SET param2 = %d WHERE id = %d",count,id);
             handler->PSendSysMessage("Count of ID %d was set to %d from %d.",id, oldCount,count);
             return true;
         }
@@ -532,16 +532,16 @@ class rebirth_commandscript : public CommandScript
         {
             if (!*args)
             {
-                handler->PSendSysMessage(".rebirth event activate #ID");
+                handler->PSendSysMessage(".event event activate #ID");
                 return true;
             }
 
             int eventID = atoi((char*)args);
 
-            QueryResult result = LoginDatabase.PQuery("SELECT * FROM rebirth_next_event WHERE id = %d", eventID);
+            QueryResult result = LoginDatabase.PQuery("SELECT * FROM event_next_event WHERE id = %d", eventID);
             if (result)
             {
-                LoginDatabase.PExecute("UPDATE rebirth_next_event SET active = 1 WHERE id = %d", eventID);
+                LoginDatabase.PExecute("UPDATE event_next_event SET active = 1 WHERE id = %d", eventID);
                 handler->PSendSysMessage("Event has been activated!");
                 return true;
             }
@@ -586,7 +586,7 @@ class rebirth_commandscript : public CommandScript
                 Field* field = result->Fetch();
                 accountid = field[0].GetInt32();
             }
-            QueryResult result = LoginDatabase.PQuery("SELECT rebirth_points FROM account WHERE id = %d", accountid);
+            QueryResult result = LoginDatabase.PQuery("SELECT event_points FROM account WHERE id = %d", accountid);
             int points = 0;
             if (result)
             {
@@ -601,16 +601,16 @@ class rebirth_commandscript : public CommandScript
         {
             if (!*args)
             {
-                handler->PSendSysMessage(".rebirth event deactivate #ID");
+                handler->PSendSysMessage(".event event deactivate #ID");
                 return true;
             }
 
             int eventID = atoi((char*)args);
 
-            QueryResult result = LoginDatabase.PQuery("SELECT * FROM rebirth_next_event WHERE id = %d", eventID);
+            QueryResult result = LoginDatabase.PQuery("SELECT * FROM event_next_event WHERE id = %d", eventID);
             if (result)
             {
-                LoginDatabase.PExecute("UPDATE rebirth_next_event SET active = 0 WHERE id = %d", eventID);
+                LoginDatabase.PExecute("UPDATE event_next_event SET active = 0 WHERE id = %d", eventID);
                 handler->PSendSysMessage("Event has been deactivated!");
                 return true;
             }
@@ -624,7 +624,7 @@ class rebirth_commandscript : public CommandScript
         ChatCommand* GetCommands() const
         {
 
-            static ChatCommand RebirthSubSubSubCommandTable[] =
+            static ChatCommand EventSubSubSubCommandTable[] =
             {
                 //{ "item", SEC_MODERATOR, true, &HandleAddRewardItemCommand, "", NULL },
                 //{ "honor", SEC_MODERATOR, true, &HandleRemovePointsCommand, "", NULL },
@@ -632,28 +632,28 @@ class rebirth_commandscript : public CommandScript
                 { NULL, 0, false, NULL, "", NULL }
             };
 
-            static ChatCommand RebirthSetCommandTable[] =
+            static ChatCommand EventSetCommandTable[] =
             {
                 //{ "cost", SEC_MODERATOR, true, &HandleSetCostCommand, "", NULL },
                 //{ "count", SEC_MODERATOR, true, &HandleSetCountCommand, "", NULL },
                 { NULL, 0, false, NULL, "", NULL }
             };
 
-            static ChatCommand RebirthSubSubCommandTable[] =
+            static ChatCommand EventSubSubCommandTable[] =
             {
                 { "addpoints", SEC_ADMINISTRATOR, true, &HandleAddPointsCommand, "", NULL },
                 { "removepoints", SEC_ADMINISTRATOR, true, &HandleRemovePointsCommand, "", NULL },
                 { "activate", SEC_ADMINISTRATOR, true, &HandleActivateCommand, "", NULL },
                 { "deactivate", SEC_ADMINISTRATOR, true, &HandleDeactivateCommand, "", NULL },
-                //{ "addreward", SEC_MODERATOR, true, NULL, "", RebirthSubSubSubCommandTable  },
-                //{ "delreward", SEC_MODERATOR, true, NULL, "", RebirthSubSubSubCommandTable  },
-                //{ "set", SEC_MODERATOR, true, NULL, "", RebirthSetCommandTable  },
+                //{ "addreward", SEC_MODERATOR, true, NULL, "", EventSubSubSubCommandTable  },
+                //{ "delreward", SEC_MODERATOR, true, NULL, "", EventSubSubSubCommandTable  },
+                //{ "set", SEC_MODERATOR, true, NULL, "", EventSetCommandTable  },
                 { NULL, 0, false, NULL, "", NULL }
             };
 		
-            static ChatCommand RebirthSubCommandTable[] =
+            static ChatCommand EventSubCommandTable[] =
             {
-                { "event", SEC_MODERATOR, true, NULL, "", RebirthSubSubCommandTable  },
+                { "event", SEC_MODERATOR, true, NULL, "", EventSubSubCommandTable  },
                 { "playerinfo", SEC_MODERATOR, true, &HandlePlayerInfoCommand, "", NULL },
                 { NULL, 0, false, NULL, "", NULL }
             };
@@ -684,9 +684,9 @@ class rebirth_commandscript : public CommandScript
                 { NULL, 0, false, NULL, "", NULL }
             };
 
-            static ChatCommand RebirthCommandTable[] =
+            static ChatCommand EventCommandTable[] =
             {
-                { "rebirth", SEC_MODERATOR, true, NULL, "", RebirthSubCommandTable  },
+                { "event", SEC_MODERATOR, true, NULL, "", EventSubCommandTable  },
                 { "mass", SEC_ADMINISTRATOR, true, NULL, "", MassSubCommandTable  },
                 { "flag", SEC_MODERATOR, true, NULL, "", FlagSubCommandTable  },
                 { "pvpevent", SEC_MODERATOR, true, NULL, "", PvPEventSubCommandTable  },
@@ -695,12 +695,12 @@ class rebirth_commandscript : public CommandScript
                 { NULL, 0, false, NULL, "", NULL }
             };
 
-            return RebirthCommandTable;
+            return EventCommandTable;
         }
 };
 
 
-void AddSC_rebirth_commandscript()
+void AddSC_event_commandscript()
 {
-    new rebirth_commandscript();
+    new event_commandscript();
 }
