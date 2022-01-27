@@ -5,11 +5,11 @@
 / __  /| |   <| |   / __ \ (_) | | | | | | (_) | |  | |
 \/ /_/ |_|_|\_\_|   \/  \/\___/|_| |_| |_|\___/|_|  |_|
 
-	 Even a fool, 
-	 		when he holdeth his peace,
-		  							is counted wise.
+     Even a fool, 
+        when he holdeth his peace,
+                    is counted wise.
 
-	Game Freedom 2021-2022
+    Game Freedom 2021-2022
 <--------------------------------------------------------------------------->
  - Developer(s): frozencore / hiki komori
  - Complete: N/A
